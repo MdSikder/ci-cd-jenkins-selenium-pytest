@@ -2,77 +2,59 @@ pipeline {
     agent any
 
     environment {
-        PYTHON_VERSION = '3.12'  // Python version, adjust as needed
+        ENV = 'test' // Set default environment to 'test'. Can be overridden by Jenkins parameter.
+        PYTHON_VERSION = '3.12'
     }
 
     stages {
-        stage('Checkout SCM') {
+        stage('Checkout Code') {
             steps {
-                echo 'Checking out the code from Git repository...'
-                checkout scm
+                // Checkout the source code from your Git repository
+                git branch: 'main', url: 'https://github.com/your-username/your-repo.git'
             }
         }
 
-        stage('Set up Python Environment') {
+        stage('Set Up Python Environment') {
             steps {
-                script {
-                    // Create a virtual environment and install dependencies without using sudo
-                    sh '''#!/bin/bash
-                        # Create the virtual environment
-                        python3 -m venv venv
+                // Install Python
+                sh "python${PYTHON_VERSION} -m venv venv"
+                sh ". venv/bin/activate"
+                sh "pip install --upgrade pip"
+            }
+        }
 
-                        # Activate the virtual environment
-                        source venv/bin/activate
-
-                        # Install dependencies
-                        pip install -r requirements.txt
-                    '''
-                }
+        stage('Install Dependencies') {
+            steps {
+                // Activate virtual environment and install dependencies
+                sh """
+                    . venv/bin/activate
+                    pip install -r requirements.txt
+                """
             }
         }
 
         stage('Run Tests') {
             steps {
-                script {
-                    // Run the tests using pytest
-                    sh '''#!/bin/bash
-                        # Activate the virtual environment
-                        source venv/bin/activate
-
-                        # Run tests using pytest
-                        pytest tests
-                    '''
+                // Activate virtual environment and run pytest
+                sh """
+                    . venv/bin/activate
+                    echo "Running tests in ${ENV} environment"
+                    pytest --maxfail=1 --disable-warnings -q --html=report.html
+                """
+            }
+            post {
+                always {
+                    // Archive the HTML report as a Jenkins artifact
+                    archiveArtifacts artifacts: 'report.html', allowEmptyArchive: true
                 }
-            }
-        }
-
-        stage('Upload Test Report') {
-            steps {
-                echo 'Uploading test reports...'
-                // Optional: Add steps to upload or store the test report
-            }
-        }
-
-        stage('Post Actions') {
-            steps {
-                echo 'Performing post-build actions...'
-                // Optional: Add any post actions, like cleanup or notifications
             }
         }
     }
 
     post {
         always {
-            echo 'Cleaning up...'
-            // Optional: Add cleanup steps if needed
-        }
-
-        success {
-            echo 'Build successful!'
-        }
-
-        failure {
-            echo 'Build failed. Please check the logs.'
+            // Cleanup: remove virtual environment
+            sh "rm -rf venv"
         }
     }
 }

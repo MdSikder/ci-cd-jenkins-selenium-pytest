@@ -16,10 +16,13 @@ def test_login():
     # driver = webdriver.Chrome()
     driver.maximize_window()
     driver.get("https://rahulshettyacademy.com/loginpagePractise/")
+    print("url opened")
     # Locate elements and perform actions
     driver.find_element(By.ID, "username").send_keys("rahulshettyacademy")
     driver.find_element(By.NAME, "password").send_keys("learning")
     driver.find_element(By.XPATH, "//input[@name='signin']").click()
+    print("longed in")
+
     time.sleep(3)
     # Check if login was successful by checking the page title
     assert "ProtoCommerce" in driver.title

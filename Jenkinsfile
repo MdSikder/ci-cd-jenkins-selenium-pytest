@@ -1,16 +1,8 @@
 pipeline {
-    agent {
-        docker {
-            // Use an official Python image from Docker Hub
-            image 'python:3.8'
-            args '-u root' // Ensure root access for container commands if necessary
-        }
-    }
+    agent any
 
     environment {
-        VENV_DIR = 'venv'  // Directory for virtual environment
-        PYTHON = 'python3'  // Python command
-        PIP = 'pip3'        // PIP command
+        // Define any environment variables if needed
     }
 
     stages {
@@ -24,56 +16,38 @@ pipeline {
         stage('Set up Python Environment') {
             steps {
                 echo 'Setting up Python environment...'
-                // Create and activate a virtual environment
-                sh """
-                    $PYTHON -m venv $VENV_DIR
-                    source $VENV_DIR/bin/activate
-                    $PIP install --upgrade pip
-                """
+                // Ensure bash is used for virtual environment setup
+                sh 'bash -c "python3 -m venv venv && source venv/bin/activate"'
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                echo 'Installing required dependencies...'
-                // Install dependencies from requirements.txt
-                sh """
-                    source $VENV_DIR/bin/activate
-                    if [ -f requirements.txt ]; then
-                        $PIP install -r requirements.txt
-                    fi
-                """
+                echo 'Installing dependencies...'
+                // Install any required dependencies (e.g., pytest, selenium)
+                sh 'bash -c "source venv/bin/activate && pip install -r requirements.txt"'
             }
         }
 
         stage('Run Tests') {
             steps {
                 echo 'Running tests...'
-                // Run your test suite (assuming pytest)
-                sh """
-                    source $VENV_DIR/bin/activate
-                    pytest --maxfail=5 --disable-warnings -q
-                """
+                // Run the tests inside the virtual environment
+                sh 'bash -c "source venv/bin/activate && pytest"'
             }
         }
 
         stage('Upload Test Report') {
             steps {
                 echo 'Uploading test report...'
-                // Example: Copy test reports to a specific directory for further processing
-                sh """
-                    source $VENV_DIR/bin/activate
-                    mkdir -p reports
-                    cp test_report.xml reports/
-                """
+                // Add your test report upload steps here
             }
         }
 
         stage('Post Actions') {
             steps {
-                echo 'Cleaning up...'
-                // Clean up the virtual environment
-                sh 'rm -rf $VENV_DIR'
+                echo 'Post actions...'
+                // Any post actions you want to perform
             }
         }
     }
@@ -83,7 +57,7 @@ pipeline {
             echo 'Pipeline finished.'
         }
         success {
-            echo 'Build completed successfully.'
+            echo 'Build succeeded!'
         }
         failure {
             echo 'Build failed. Please check the logs.'

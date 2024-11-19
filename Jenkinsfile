@@ -2,8 +2,7 @@ pipeline {
     agent any
 
     environment {
-        // Optional: Define environment variables here if needed
-        PYTHON_VERSION = '3.8'  // Python version, adjust as needed
+        PYTHON_VERSION = '3.12'  // Python version, adjust as needed
     }
 
     stages {
@@ -17,16 +16,16 @@ pipeline {
         stage('Set up Python Environment') {
             steps {
                 script {
-                    // Use bash to create and activate virtual environment, and install dependencies
+                    // Create a virtual environment and install dependencies using sudo to ensure proper access
                     sh '''#!/bin/bash
-                        # Create a virtual environment
-                        python3 -m venv venv
+                        # Create the virtual environment with sudo if needed
+                        sudo python3 -m venv venv
 
                         # Activate the virtual environment
                         source venv/bin/activate
 
-                        # Install dependencies from requirements.txt
-                        pip install -r requirements.txt
+                        # Install dependencies with sudo if needed
+                        sudo pip install -r requirements.txt
                     '''
                 }
             }
@@ -35,13 +34,13 @@ pipeline {
         stage('Run Tests') {
             steps {
                 script {
-                    // Run the tests inside the virtual environment
+                    // Run the tests using pytest, with sudo if needed
                     sh '''#!/bin/bash
                         # Activate the virtual environment
                         source venv/bin/activate
 
                         # Run tests using pytest
-                        pytest tests
+                        sudo pytest tests
                     '''
                 }
             }

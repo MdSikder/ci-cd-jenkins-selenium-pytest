@@ -1,55 +1,46 @@
 pipeline {
-    agent any
+    agent { label 'ubuntu-latest' }
+
+    environment {
+        PYTHON_VERSION = '3.9'
+    }
 
     stages {
-        stage('Checkout Code') {
+        stage('Checkout') {
             steps {
-                // Checkout the source code from your Git repository
-                git branch: 'main', url: 'https://github.com/MdSikder/selenium-pytest-github-ci-cd.git'
+                // Checkout the latest code from the provided Git repository
+                git 'https://github.com/MdSikder/ci-cd-jenkins-selenium-pytest.git'
             }
         }
 
-        stage('Set Up Python Environment') {
+        stage('Set up Python') {
             steps {
-                // Install Python and create a virtual environment
-                sh "python3.12 -m venv venv"
-                sh ". venv/bin/activate"
-                sh "pip install --upgrade pip"
+                // Set up Python environment
+                sh 'sudo apt-get update'
+                sh 'sudo apt-get install python3 python3-pip'
+                sh "python3 -m pip install --upgrade pip"
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                // Activate virtual environment and install dependencies
-                sh """
-                    . venv/bin/activate
-                    pip install -r requirements.txt
-                """
+                // Install the dependencies from requirements.txt
+                sh 'pip install -r requirements.txt'
             }
         }
 
         stage('Run Tests') {
             steps {
-                // Activate virtual environment and run pytest
-                sh """
-                    . venv/bin/activate
-                    echo "Running tests"
-                    pytest --maxfail=1 --disable-warnings -q --html=report.html
-                """
-            }
-            post {
-                always {
-                    // Archive the HTML report as a Jenkins artifact
-                    archiveArtifacts artifacts: 'report.html', allowEmptyArchive: true
-                }
+                // Run tests with pytest and generate an HTML report
+                sh 'pytest --maxfail=1 --disable-warnings -q --html=report.html'
             }
         }
-    }
 
-    post {
-        always {
-            // Cleanup: remove virtual environment
-            sh "rm -rf venv"
+        stage('Upload Test Report') {
+            steps {
+                // Archive the test report as a build artifact
+                archiveArtifacts artifacts: 'report.html', allowEmptyArchive: true
+            }
         }
     }
 }

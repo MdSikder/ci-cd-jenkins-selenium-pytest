@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'ubuntu-latest' }
+    agent { label 'linux' }
 
     environment {
         PYTHON_VERSION = '3.9'

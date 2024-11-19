@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        PYTHON_VERSION = '3.12'  // Python version, adjust as needed
+        PYTHON_VERSION = '3.8'  // Python version, adjust as needed
     }
 
     stages {
@@ -34,6 +34,7 @@ pipeline {
                         sh '''#!/bin/bash
                             source venv/bin/activate
                             pytest tests --maxfail=1 --disable-warnings -q --html=report.html
+                            ls -lh report.html  // Check if report.html exists
                         '''
                     }
                 }
@@ -44,7 +45,7 @@ pipeline {
             steps {
                 echo 'Uploading test reports...'
                 // Archive the HTML test report as a Jenkins artifact
-                archiveArtifacts artifacts: 'report.html', allowEmptyArchive: true
+                archiveArtifacts artifacts: '**/report.html', allowEmptyArchive: true
             }
         }
 

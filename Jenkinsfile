@@ -16,16 +16,16 @@ pipeline {
         stage('Set up Python Environment') {
             steps {
                 script {
-                    // Create a virtual environment and install dependencies using sudo to ensure proper access
+                    // Create a virtual environment and install dependencies without using sudo
                     sh '''#!/bin/bash
-                        # Create the virtual environment with sudo if needed
-                        sudo python3 -m venv venv
+                        # Create the virtual environment
+                        python3 -m venv venv
 
                         # Activate the virtual environment
                         source venv/bin/activate
 
-                        # Install dependencies with sudo if needed
-                        sudo pip install -r requirements.txt
+                        # Install dependencies
+                        pip install -r requirements.txt
                     '''
                 }
             }
@@ -34,13 +34,13 @@ pipeline {
         stage('Run Tests') {
             steps {
                 script {
-                    // Run the tests using pytest, with sudo if needed
+                    // Run the tests using pytest
                     sh '''#!/bin/bash
                         # Activate the virtual environment
                         source venv/bin/activate
 
                         # Run tests using pytest
-                        sudo pytest tests
+                        pytest tests
                     '''
                 }
             }

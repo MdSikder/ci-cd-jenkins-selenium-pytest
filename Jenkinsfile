@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        PYTHON_VERSION = '3.12'  // Python version, adjust as needed
+        PYTHON_VERSION = '3.8'  // Python version, adjust as needed
     }
 
     stages {
@@ -29,11 +29,11 @@ pipeline {
         stage('Run Tests') {
             steps {
                 script {
-                    // Run tests using pytest
+                    // Run tests using pytest and generate an HTML report
                     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                         sh '''#!/bin/bash
                             source venv/bin/activate
-                            pytest tests
+                            pytest tests --maxfail=1 --disable-warnings -q --html=report.html
                         '''
                     }
                 }
@@ -43,7 +43,8 @@ pipeline {
         stage('Upload Test Report') {
             steps {
                 echo 'Uploading test reports...'
-                // Optional: Add steps to upload or store the test report
+                // Archive the HTML test report as a Jenkins artifact
+                archiveArtifacts artifacts: 'report.html', allowEmptyArchive: true
             }
         }
 

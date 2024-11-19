@@ -1,46 +1,80 @@
 pipeline {
-    agent { label 'linux' }
+    agent any
 
     environment {
         PYTHON_VERSION = '3.9'
+        VENV_PATH = 'venv'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // Checkout the latest code from the provided Git repository
-                git 'https://github.com/MdSikder/ci-cd-jenkins-selenium-pytest.git'
+                echo 'Checking out the code...'
+                git url: 'https://github.com/MdSikder/ci-cd-jenkins-selenium-pytest.git', branch: 'main'
             }
         }
 
-        stage('Set up Python') {
+        stage('Set up Python Environment') {
             steps {
-                // Set up Python environment
-                sh 'sudo apt-get update'
-                sh 'sudo apt-get install python3 python3-pip'
-                sh "python3 -m pip install --upgrade pip"
+                echo 'Setting up Python environment...'
+                sh '''
+                    sudo apt-get update -y
+                    sudo apt-get install -y python3 python3-pip
+                    python3 -m pip install --upgrade pip
+                    pip install virtualenv
+                '''
+            }
+        }
+
+        stage('Create Virtual Environment') {
+            steps {
+                echo 'Creating virtual environment...'
+                sh '''
+                    python3 -m venv ${VENV_PATH}
+                    . ${VENV_PATH}/bin/activate
+                    pip install --upgrade pip
+                '''
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                // Install the dependencies from requirements.txt
-                sh 'pip install -r requirements.txt'
+                echo 'Installing dependencies...'
+                sh '''
+                    . ${VENV_PATH}/bin/activate
+                    pip install -r requirements.txt || { echo "Dependency installation failed"; exit 1; }
+                '''
             }
         }
 
         stage('Run Tests') {
             steps {
-                // Run tests with pytest and generate an HTML report
-                sh 'pytest --maxfail=1 --disable-warnings -q --html=report.html'
+                echo 'Running tests...'
+                sh '''
+                    . ${VENV_PATH}/bin/activate
+                    pytest --maxfail=1 --disable-warnings -q --html=report.html
+                '''
             }
         }
 
         stage('Upload Test Report') {
             steps {
-                // Archive the test report as a build artifact
-                archiveArtifacts artifacts: 'report.html', allowEmptyArchive: true
+                echo 'Archiving test report...'
+                archiveArtifacts artifacts: 'report.html', allowEmptyArchive: false
             }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline completed. Cleaning up...'
+            sh 'rm -rf ${VENV_PATH}'
+        }
+        failure {
+            echo 'Build failed. Please check the logs for details.'
+        }
+        success {
+            echo 'Build succeeded!'
         }
     }
 }

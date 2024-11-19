@@ -1,80 +1,92 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            // Use an official Python image from Docker Hub
+            image 'python:3.8'
+            args '-u root' // Ensure root access for container commands if necessary
+        }
+    }
 
     environment {
-        PYTHON_VERSION = '3.9'
-        VENV_PATH = 'venv'
+        VENV_DIR = 'venv'  // Directory for virtual environment
+        PYTHON = 'python3'  // Python command
+        PIP = 'pip3'        // PIP command
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout SCM') {
             steps {
-                echo 'Checking out the code...'
-                git url: 'https://github.com/MdSikder/ci-cd-jenkins-selenium-pytest.git', branch: 'main'
+                echo 'Checking out the code from Git repository...'
+                checkout scm
             }
         }
 
         stage('Set up Python Environment') {
             steps {
                 echo 'Setting up Python environment...'
-                sh '''
-                    apt-get update -y
-                    apt-get install -y python3 python3-pip
-                    python3 -m pip install --upgrade pip
-                    pip install virtualenv
-                '''
-            }
-        }
-
-        stage('Create Virtual Environment') {
-            steps {
-                echo 'Creating virtual environment...'
-                sh '''
-                    python3 -m venv ${VENV_PATH}
-                    . ${VENV_PATH}/bin/activate
-                    pip install --upgrade pip
-                '''
+                // Create and activate a virtual environment
+                sh """
+                    $PYTHON -m venv $VENV_DIR
+                    source $VENV_DIR/bin/activate
+                    $PIP install --upgrade pip
+                """
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                echo 'Installing dependencies...'
-                sh '''
-                    . ${VENV_PATH}/bin/activate
-                    pip install -r requirements.txt || { echo "Dependency installation failed"; exit 1; }
-                '''
+                echo 'Installing required dependencies...'
+                // Install dependencies from requirements.txt
+                sh """
+                    source $VENV_DIR/bin/activate
+                    if [ -f requirements.txt ]; then
+                        $PIP install -r requirements.txt
+                    fi
+                """
             }
         }
 
         stage('Run Tests') {
             steps {
                 echo 'Running tests...'
-                sh '''
-                    . ${VENV_PATH}/bin/activate
-                    pytest --maxfail=1 --disable-warnings -q --html=report.html
-                '''
+                // Run your test suite (assuming pytest)
+                sh """
+                    source $VENV_DIR/bin/activate
+                    pytest --maxfail=5 --disable-warnings -q
+                """
             }
         }
 
         stage('Upload Test Report') {
             steps {
-                echo 'Archiving test report...'
-                archiveArtifacts artifacts: 'report.html', allowEmptyArchive: false
+                echo 'Uploading test report...'
+                // Example: Copy test reports to a specific directory for further processing
+                sh """
+                    source $VENV_DIR/bin/activate
+                    mkdir -p reports
+                    cp test_report.xml reports/
+                """
+            }
+        }
+
+        stage('Post Actions') {
+            steps {
+                echo 'Cleaning up...'
+                // Clean up the virtual environment
+                sh 'rm -rf $VENV_DIR'
             }
         }
     }
 
     post {
         always {
-            echo 'Pipeline completed. Cleaning up...'
-            sh 'rm -rf ${VENV_PATH}'
-        }
-        failure {
-            echo 'Build failed. Please check the logs for details.'
+            echo 'Pipeline finished.'
         }
         success {
-            echo 'Build succeeded!'
+            echo 'Build completed successfully.'
+        }
+        failure {
+            echo 'Build failed. Please check the logs.'
         }
     }
 }

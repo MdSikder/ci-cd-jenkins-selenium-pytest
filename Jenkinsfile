@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        PYTHON_VERSION = '3.8'  // Python version, adjust as needed
+        PYTHON_VERSION = '3.12'  // Python version, adjust as needed
     }
 
     stages {

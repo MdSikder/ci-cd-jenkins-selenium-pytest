@@ -34,7 +34,6 @@ pipeline {
                         sh '''#!/bin/bash
                             source venv/bin/activate
                             pytest tests --maxfail=1 --disable-warnings -q --html=report.html
-                            ls -lh report.html  // Check if report.html exists
                         '''
                     }
                 }
@@ -45,7 +44,7 @@ pipeline {
             steps {
                 echo 'Uploading test reports...'
                 // Archive the HTML test report as a Jenkins artifact
-                archiveArtifacts artifacts: '**/report.html', allowEmptyArchive: true
+                archiveArtifacts artifacts: 'report.html', allowEmptyArchive: true
             }
         }
 

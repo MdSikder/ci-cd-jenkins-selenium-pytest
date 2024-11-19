@@ -2,7 +2,8 @@ pipeline {
     agent any
 
     environment {
-        // Define any environment variables if needed
+        // Optional: Define environment variables here if needed
+        PYTHON_VERSION = '3.8'  // Python version, adjust as needed
     }
 
     stages {
@@ -15,50 +16,62 @@ pipeline {
 
         stage('Set up Python Environment') {
             steps {
-                echo 'Setting up Python environment...'
-                // Ensure bash is used for virtual environment setup
-                sh 'bash -c "python3 -m venv venv && source venv/bin/activate"'
-            }
-        }
+                script {
+                    // Use bash to create and activate virtual environment, and install dependencies
+                    sh '''#!/bin/bash
+                        # Create a virtual environment
+                        python3 -m venv venv
 
-        stage('Install Dependencies') {
-            steps {
-                echo 'Installing dependencies...'
-                // Install any required dependencies (e.g., pytest, selenium)
-                sh 'bash -c "source venv/bin/activate && pip install -r requirements.txt"'
+                        # Activate the virtual environment
+                        source venv/bin/activate
+
+                        # Install dependencies from requirements.txt
+                        pip install -r requirements.txt
+                    '''
+                }
             }
         }
 
         stage('Run Tests') {
             steps {
-                echo 'Running tests...'
-                // Run the tests inside the virtual environment
-                sh 'bash -c "source venv/bin/activate && pytest"'
+                script {
+                    // Run the tests inside the virtual environment
+                    sh '''#!/bin/bash
+                        # Activate the virtual environment
+                        source venv/bin/activate
+
+                        # Run tests using pytest
+                        pytest tests
+                    '''
+                }
             }
         }
 
         stage('Upload Test Report') {
             steps {
-                echo 'Uploading test report...'
-                // Add your test report upload steps here
+                echo 'Uploading test reports...'
+                // Optional: Add steps to upload or store the test report
             }
         }
 
         stage('Post Actions') {
             steps {
-                echo 'Post actions...'
-                // Any post actions you want to perform
+                echo 'Performing post-build actions...'
+                // Optional: Add any post actions, like cleanup or notifications
             }
         }
     }
 
     post {
         always {
-            echo 'Pipeline finished.'
+            echo 'Cleaning up...'
+            // Optional: Add cleanup steps if needed
         }
+
         success {
-            echo 'Build succeeded!'
+            echo 'Build successful!'
         }
+
         failure {
             echo 'Build failed. Please check the logs.'
         }
